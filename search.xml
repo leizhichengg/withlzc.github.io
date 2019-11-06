@@ -1,6 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Golang使用中间件基于swagger处理业务日志</title>
+    <url>/2019/11/06/go-swagger-logger/</url>
+    <content><![CDATA[<p>业务日志不同于系统日志，系统日志主要用于Debug过程中，而业务日志直接面向用户，是用户操作行为的记录，项目中一般针对HTTP请求来记录业务日志，但HTTP请求函数较多，如果在每个API请求的函数中都加上记录业务日志的代码，会造成代码大量重复且低效。可以将业务日志模块独立出来，集成到中间件中，每次HTTP请求自动调用中间件模块记录业务日志。</p>
+<a id="more"></a>
+
+<h2 id="中间件"><a href="#中间件" class="headerlink" title="中间件"></a>中间件</h2><p>中间件在golang中是一个很重要的概念，类似于Java中的拦截器，中间件实现了业务隔离，比如业务日志模块就可以从具体业务中抽离出来，不需要在每个业务请求代码中插入记录业务日志的代码块。</p>
+<p>中间件中主要包括三个概念：Context，Next()，洋葱结构。</p>
+<h3 id="gin-Context"><a href="#gin-Context" class="headerlink" title="*gin.Context"></a>*gin.Context</h3><p>Context为业务所需要的上下文，比如包含Request、Response等信息。</p>
+<h3 id="Next"><a href="#Next" class="headerlink" title="Next()"></a>Next()</h3><p>next是业务流的下发控制，在众多中间件中，会有一条中间件链，通过中间件中的Next()函数对后续的中间件进行执行，而在每个中间件中，Next函数前的内容在请求之前执行，Next函数之后的内容在请求之后执行，如代码块func MyMiddleware()所示：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">MyMiddleware</span><span class="params">()</span> <span class="title">gin</span>.<span class="title">HandleFunc</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(c *gin.Context)</span></span> &#123;</span><br><span class="line">        <span class="comment">//请求前</span></span><br><span class="line">        c.Next()</span><br><span class="line">        <span class="comment">//请求后</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="洋葱结构"><a href="#洋葱结构" class="headerlink" title="洋葱结构"></a>洋葱结构</h3><p>多个中间件会形成一个栈结构，以先进先出的顺序执行，也被称为洋葱结构，如下图所示，在Request请求之前会调用所有注册的中间件，并通过Next函数一层层深入，直到所有中间件的Next都调用完成，执行Request，并拿到Response，然后通过回调函数逆序执行所有中间件中Next函数之后的内容。</p>
+<img style="margin: auto;" width=300 src="./onion.png">
+
+<p>使用中间件之后，记录业务日志模块只需要从Request中获取到请求的Path，以及从Response中获取返回的结果，就可以从swagger.json中根据Path获取详细的业务描述，以及对应的结果。</p>
+<hr>
+<h2 id="Swagger"><a href="#Swagger" class="headerlink" title="Swagger"></a>Swagger</h2><p>Swagger是一个规范和完整的框架，是用于生成、描述、调用和可视化Restful风格的Web服务。Swagger对每一个操作的请求消息的参数，响应消息的状态码等都进行了详细的描述，Swagger文档可直接从代码注释中自动生成。</p>
+<p>生成的swagger.json文件格式如下图所示：</p>
+<img style="margin: auto;" width=600 src="./swaggerJson.png">
+
+<hr>
+<h2 id="获取Path-summary"><a href="#获取Path-summary" class="headerlink" title="获取Path summary"></a>获取Path summary</h2><p>我们需要根据请求的API路径在swagger.json中查找到对应的path以及描述信息，拿上图举例，实际请求的path是<code>/api/surveillance/applies/1/approve</code>，需要对应到swagger中的<code>/api/surveillance/applies/{id}/approve</code>，在参数<code>1</code>到<code>{id}</code>的匹配上会存在一点难度。</p>
+<h3 id="将swagger中path存储为树结构"><a href="#将swagger中path存储为树结构" class="headerlink" title="将swagger中path存储为树结构"></a>将swagger中path存储为树结构</h3><p>由于所有path都是从<code>/api</code>延续下去，因此可以使用树结构存储swagger.json中所有的path，也便于一层层地往下查找路径。</p>
+<p>树中节点的结构设计如下，包含当前节点的相对路径path，所有子节点children，该节点如果是叶子节点则包含对应的request method和response信息，如果不是叶子节点，则为空，最后还有节点的类型，分为普通类型和参数类型。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> node <span class="keyword">struct</span> &#123;</span><br><span class="line">  <span class="comment">//current node relative path</span></span><br><span class="line">  path <span class="keyword">string</span></span><br><span class="line">  <span class="comment">//all children node</span></span><br><span class="line">  children []*node</span><br><span class="line">  <span class="comment">//all request method and response</span></span><br><span class="line">  method  <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">  <span class="comment">//node type: normal, param</span></span><br><span class="line">  nType <span class="keyword">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="从swagger-tree树中检索"><a href="#从swagger-tree树中检索" class="headerlink" title="从swagger tree树中检索"></a>从swagger tree树中检索</h3><p>从swagger tree中检索path时，流程图如下图GetMethodInfo所示，将请求的实际path分割为一个pathSlice，依次拿pathSlice中的p去树中遍历查找，如果树中该节点是普通类型，则判断p和节点的相对路径是否相同，如果该节点是参数类型，则默认匹配children中所有节点，进行下一层的遍历，因为children中如果又一个子节点是参数类型，那么所有的子节点都是参数类型，这是由request请求的性质决定的。遍历完pathSlice中最后一个元素则结束循环，返回取到的结果。</p>
+<img style="margin: auto;" width=700 src="./GetMethodInfo.png">
+
+<p>最终根据获取到的请求描述信息，以及返回的结果生成对应的业务日志，例如：用户admin批准布控申请 成功or失败。</p>
+]]></content>
+      <categories>
+        <category>golang</category>
+      </categories>
+      <tags>
+        <tag>middleware</tag>
+        <tag>swagger</tag>
+        <tag>log</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2019/10/28/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
