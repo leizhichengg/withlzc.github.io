@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Golang使用中间件基于swagger处理业务日志</title>
+    <title>Golang基于swagger处理业务日志</title>
     <url>/2019/11/06/go-swagger-logger/</url>
     <content><![CDATA[<p>业务日志不同于系统日志，系统日志主要用于Debug过程中，而业务日志直接面向用户，是用户操作行为的记录，项目中一般针对HTTP请求来记录业务日志，但HTTP请求函数较多，如果在每个API请求的函数中都加上记录业务日志的代码，会造成代码大量重复且低效。可以将业务日志模块独立出来，集成到中间件中，每次HTTP请求自动调用中间件模块记录业务日志。</p>
 <a id="more"></a>

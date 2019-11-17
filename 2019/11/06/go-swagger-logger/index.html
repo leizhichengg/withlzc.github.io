@@ -53,7 +53,7 @@
   <meta name="description" content="业务日志不同于系统日志，系统日志主要用于Debug过程中，而业务日志直接面向用户，是用户操作行为的记录，项目中一般针对HTTP请求来记录业务日志，但HTTP请求函数较多，如果在每个API请求的函数中都加上记录业务日志的代码，会造成代码大量重复且低效。可以将业务日志模块独立出来，集成到中间件中，每次HTTP请求自动调用中间件模块记录业务日志。">
 <meta name="keywords" content="middleware,swagger,log">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Golang使用中间件基于swagger处理业务日志">
+<meta property="og:title" content="Golang基于swagger处理业务日志">
 <meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;06&#x2F;go-swagger-logger&#x2F;index.html">
 <meta property="og:site_name" content="Have Func">
 <meta property="og:description" content="业务日志不同于系统日志，系统日志主要用于Debug过程中，而业务日志直接面向用户，是用户操作行为的记录，项目中一般针对HTTP请求来记录业务日志，但HTTP请求函数较多，如果在每个API请求的函数中都加上记录业务日志的代码，会造成代码大量重复且低效。可以将业务日志模块独立出来，集成到中间件中，每次HTTP请求自动调用中间件模块记录业务日志。">
@@ -61,7 +61,7 @@
 <meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;06&#x2F;go-swagger-logger&#x2F;onion.png">
 <meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;06&#x2F;go-swagger-logger&#x2F;swaggerJson.png">
 <meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;06&#x2F;go-swagger-logger&#x2F;GetMethodInfo.png">
-<meta property="og:updated_time" content="2019-11-06T08:23:31.660Z">
+<meta property="og:updated_time" content="2019-11-17T17:08:37.323Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;06&#x2F;go-swagger-logger&#x2F;onion.png">
 
@@ -79,7 +79,7 @@
   };
 </script>
 
-  <title>Golang使用中间件基于swagger处理业务日志 | Have Func</title>
+  <title>Golang基于swagger处理业务日志 | Have Func</title>
   
 
 
@@ -228,7 +228,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Golang使用中间件基于swagger处理业务日志
+          Golang基于swagger处理业务日志
         </h1>
 
         <div class="post-meta">
@@ -237,10 +237,16 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2019-11-06 14:42:35 / Modified: 16:23:31" itemprop="dateCreated datePublished" datetime="2019-11-06T14:42:35+08:00">2019-11-06</time>
+              <time title="Created: 2019-11-06 14:42:35" itemprop="dateCreated datePublished" datetime="2019-11-06T14:42:35+08:00">2019-11-06</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-11-18 01:08:37" itemprop="dateModified" datetime="2019-11-18T01:08:37+08:00">2019-11-18</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
