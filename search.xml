@@ -7,12 +7,10 @@
 <a id="more"></a>
 
 <h2 id="中间件"><a href="#中间件" class="headerlink" title="中间件"></a>中间件</h2><p>中间件在golang中是一个很重要的概念，类似于Java中的拦截器，中间件实现了业务隔离，比如业务日志模块就可以从具体业务中抽离出来，不需要在每个业务请求代码中插入记录业务日志的代码块。</p>
-<p>中间件中主要包括三个概念：Context，Next()，洋葱结构。</p>
-<h3 id="gin-Context"><a href="#gin-Context" class="headerlink" title="*gin.Context"></a>*gin.Context</h3><p>Context为业务所需要的上下文，比如包含Request、Response等信息。</p>
-<h3 id="Next"><a href="#Next" class="headerlink" title="Next()"></a>Next()</h3><p>next是业务流的下发控制，在众多中间件中，会有一条中间件链，通过中间件中的Next()函数对后续的中间件进行执行，而在每个中间件中，Next函数前的内容在请求之前执行，Next函数之后的内容在请求之后执行，如代码块func MyMiddleware()所示：</p>
+<p>在golang中，中间件的代码块形式如func MyMiddleware()所示，gin.Context中包含业务所需的上下文，比如HTTP请求的信息；c.Next()用来实现业务流的下发控制，在众多中间件中会形成一条中间件链，通过中间件中的Next()函数对后续的中间件进行执行，而在每个中间件中，Next()函数前的内容在请求之前执行，Next()函数之后的内容在请求之后执行。</p>
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">MyMiddleware</span><span class="params">()</span> <span class="title">gin</span>.<span class="title">HandleFunc</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(c *gin.Context)</span></span> &#123;</span><br><span class="line">        <span class="comment">//请求前</span></span><br><span class="line">        c.Next()</span><br><span class="line">        <span class="comment">//请求后</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="洋葱结构"><a href="#洋葱结构" class="headerlink" title="洋葱结构"></a>洋葱结构</h3><p>多个中间件会形成一个栈结构，以先进先出的顺序执行，也被称为洋葱结构，如下图所示，在Request请求之前会调用所有注册的中间件，并通过Next函数一层层深入，直到所有中间件的Next都调用完成，执行Request，并拿到Response，然后通过回调函数逆序执行所有中间件中Next函数之后的内容。</p>
+<p>多个中间件会形成一个栈结构，以先进先出的顺序执行，也被称为洋葱结构，如下图所示，在Request请求之前会调用所有注册的中间件，并通过Next函数一层层深入，直到所有中间件的Next都调用完成，执行Request，并拿到Response，然后通过回调函数逆序执行所有中间件中Next函数之后的内容。</p>
 <img style="margin: auto;" width=300 src="./onion.png">
 
 <p>使用中间件之后，记录业务日志模块只需要从Request中获取到请求的Path，以及从Response中获取返回的结果，就可以从swagger.json中根据Path获取详细的业务描述，以及对应的结果。</p>
