@@ -1,6 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>直播协议与直播流分发服务</title>
+    <url>/2019/12/07/live-protocol-and-server/</url>
+    <content><![CDATA[<p>常见的直播协议主要有：RTMP，HTTP-FLV，HLS等，推流一般都采用RTMP，拉流使用RTMP、HTTP-FLV或HLS协议。</p>
+<a id="more"></a>
+
+<h2 id="RTMP、HTTP-FLV、HLS"><a href="#RTMP、HTTP-FLV、HLS" class="headerlink" title="RTMP、HTTP-FLV、HLS"></a>RTMP、HTTP-FLV、HLS</h2><h3 id="RTMP"><a href="#RTMP" class="headerlink" title="RTMP"></a>RTMP</h3><p>RTMP（Real Time Messaging Protocol，实时消息协议），是Adobe为Flash播放器和服务器之间传输流媒体音频、视频和数据开发的一个专有协议。RTMP是基于TCP的应用层协议，默认使用端口1935。</p>
+<h3 id="HTTP-FLV"><a href="#HTTP-FLV" class="headerlink" title="HTTP-FLV"></a>HTTP-FLV</h3><p>HTTP-FLV，将音视频数据封装为FLV格式，然后通过HTTP协议传输给客户端。HTTP-FLV依靠MIME的特性，根据协议中的Content-Type来选择相应的程序去处理相应的内容，使得流媒体可以通过HTTP传输。</p>
+<h3 id="HLS"><a href="#HLS" class="headerlink" title="HLS"></a>HLS</h3><p>HLS（HTTP Live Streaming）是Apple提出的基于HTTP的流媒体网络传输协议。HLS的工作原理是将整个流分成一个个小的基于HTTP的ts文件来下载，并通过m3u8索引文件按序访问ts文件。客户端通过不停地按序播放从服务器获取到的文件实现播放音视频数据。</p>
+<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
+<thead>
+<tr>
+<th align="center">传输协议</th>
+<th align="center">RTMP</th>
+<th align="center">RTMP</th>
+<th align="center">HLS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">视频格式</td>
+<td align="center">flv</td>
+<td align="center">flv</td>
+<td align="center">ts</td>
+</tr>
+<tr>
+<td align="center">延迟</td>
+<td align="center">1~3 s</td>
+<td align="center">1~3 s</td>
+<td align="center">&gt; 10 s</td>
+</tr>
+<tr>
+<td align="center">HTML5播放</td>
+<td align="center">不支持</td>
+<td align="center">支持</td>
+<td align="center">支持</td>
+</tr>
+</tbody></table>
+<p>由于Chrome在2020年会停止支持flash player，对Web客户端来说RTMP协议将无法适用，而HLS协议的延迟较高，因此HTTP-FLV协议成为更合适的选择。HTTP-FLV可以配合flv.js实现基于HTML5播放。</p>
+<p><a href="https://github.com/bilibili/flv.js" target="_blank" rel="noopener">flv.js</a>是来自于Bilibili的开源项目，它通过解析FLV文件喂给原生HTML5 Video标签播放音视频数据，使浏览器在不借助Flash的情况下播放FLV成为可能。</p>
+<hr>
+<h2 id="直播流分发服务"><a href="#直播流分发服务" class="headerlink" title="直播流分发服务"></a>直播流分发服务</h2><p>直播流分发一般是将本地视频文件或者其他视频源通过编码、转换等手段推送到特定协议的播放地址，直播分发服务监听RTMP端口（默认1935），获取到音视频数据后将起编码为特定的协议格式分发出去。目前接触到两个GitHub上较为常用的直播分发服务：<a href="https://github.com/gwuhaolin/livego" target="_blank" rel="noopener">livego</a>和<a href="https://github.com/ossrs/srs" target="_blank" rel="noopener">SRS</a>。</p>
+<p>livego是纯go编写的直播服务器，性能高、跨平台，支持常见的传输协议、文件格式、编码格式等。</p>
+<p>SRS是一个简单的流媒体直播集群，提供丰富的接入方案将RTMP流接入SRS（包含推送RTMP流到SRS、推送RTSP、FLV到SRS等），支持将接入的RTMP流进行各种转换（例如封装为HTTP-FLV流、HLS流等）。</p>
+<p>livego和SRS服务都可以直接通过docker启动服务：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">livego:</span><br><span class="line">docker run -p 1935:1935 -p 7001:7001 -p 7002:7002 -d --name livego gwuhaolin/livego</span><br><span class="line"></span><br><span class="line">SRS:</span><br><span class="line">docker run -p 1935:1935 -p 1985:1985 -p 8080:8080 ossrs/srs:3</span><br></pre></td></tr></table></figure>
+
+<p>服务启动后使用<code>ffmpeg</code>命令进行推流：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ffmpeg -re -I demo.mp4 -c copy -f flv rtmp://localhost:1935/live/demo</span><br></pre></td></tr></table></figure>
+
+<p>下行播放地址：</p>
+<ul>
+<li>RTMP: <code>rtmp:localhost:&quot;rtmp port&quot;/live/demo</code></li>
+<li>HTTP-FLV: <code>http://localhost:&quot;http-flv port&quot;/live/demo.flv</code></li>
+<li>HLS: <code>http://localhost:&quot;hls port&quot;/live/demo.m3u8</code></li>
+</ul>
+<p>在使用livego的过程中，ffmpeg推流经过一段时间后，livego服务偶尔会中断，该服务GitHub仓库issues中也多次提到该<a href="https://github.com/gwuhaolin/livego/issues/4" target="_blank" rel="noopener">问题</a>，但仍未彻底解决。SRS相较于livego更稳定，很少会出现服务中断的问题，因此最终还是选择了SRS作为推流的服务。</p>
+]]></content>
+      <categories>
+        <category>others</category>
+      </categories>
+      <tags>
+        <tag>live</tag>
+        <tag>rtmp</tag>
+        <tag>http-flv</tag>
+        <tag>hls</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Golang基于swagger处理业务日志</title>
     <url>/2019/11/06/go-swagger-logger/</url>
     <content><![CDATA[<p>业务日志不同于系统日志，系统日志主要用于Debug过程中，而业务日志直接面向用户，是用户操作行为的记录，项目中一般针对HTTP请求来记录业务日志，但HTTP请求函数较多，如果在每个API请求的函数中都加上记录业务日志的代码，会造成代码大量重复且低效。可以将业务日志模块独立出来，集成到中间件中，每次HTTP请求自动调用中间件模块记录业务日志。</p>
